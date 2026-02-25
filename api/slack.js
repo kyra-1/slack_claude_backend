@@ -4,38 +4,59 @@ export default async function handler(req, res) {
     return res.status(405).send("Method not allowed");
   }
 
-  const body =
-    typeof req.body === "string"
-      ? new URLSearchParams(req.body)
-      : new URLSearchParams(req.body);
+  try {
 
-  const question = body.get("text");
-  const channel = body.get("channel_id");
+    // Slack body parsing (safe)
+    const rawBody =
+      typeof req.body === "string"
+        ? req.body
+        : new URLSearchParams(req.body).toString();
 
-  await fetch(
-    "https://api.github.com/repos/kyra-1/thapar-task-hub/dispatches",
-    {
-      method: "POST",
+    const params = new URLSearchParams(rawBody);
 
-      headers: {
+    const question = params.get("text") || "hello";
+
+    const channel = params.get("channel_id");
+
+    console.log("Dispatching question:", question);
+
+    const response = await fetch(
+      "https://api.github.com/repos/kyra-1/thapar-task-hub/dispatches",
+      {
+
+        method: "POST",
+
+        headers: {
+
           Authorization: `Bearer ${process.env.GH_TOKEN}`,
+
           Accept: "application/vnd.github+json",
+
           "X-GitHub-Api-Version": "2022-11-28",
+
           "Content-Type": "application/json"
         },
 
-      body: JSON.stringify({
+        body: JSON.stringify({
 
-        event_type: "claude_query",
+          event_type: "claude_query",
 
-        client_payload: {
-          question,
-          channel
-        }
+          client_payload: {
+            question,
+            channel
+          }
 
-      })
-    }
-  );
+        })
+      }
+    );
+
+    console.log("GitHub status:", response.status);
+
+  } catch (err) {
+
+    console.error("ERROR:", err);
+
+  }
 
   return res.status(200).send("Claude is thinking...");
 }
