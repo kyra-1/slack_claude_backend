@@ -1,4 +1,5 @@
 {
   "name":"slack-backend",
+  "private": true,
   "type":"module"
 }
